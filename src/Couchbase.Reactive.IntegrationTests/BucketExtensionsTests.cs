@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Couchbase.Reactive.IntegrationTests.Documents;
 using NUnit.Framework;
+using System.Configuration;
+using Couchbase.Reactive.IntegrationTests.Utils;
 
 namespace Couchbase.Reactive.IntegrationTests
 {
@@ -16,7 +18,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void GetObject()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -30,7 +32,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void GetDocument()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -44,7 +46,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void MultiGetObject()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -65,7 +67,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void MultiGetDocument()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -86,7 +88,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void QueryView()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -110,7 +112,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void QueryView_ExpectError()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -162,7 +164,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void QueryN1Ql()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
@@ -183,7 +185,7 @@ namespace Couchbase.Reactive.IntegrationTests
         [Test]
         public void QueryN1Ql_ExpectError()
         {
-            using (var cluster = new Cluster())
+            using (var cluster = new Cluster(TestConfiguration.GetConfiguration("default")))
             {
                 using (var bucket = cluster.OpenBucket("beer-sample"))
                 {
