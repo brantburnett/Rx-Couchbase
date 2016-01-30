@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Couchbase.Core;
 
 namespace Couchbase.Reactive
 {
@@ -13,22 +12,16 @@ namespace Couchbase.Reactive
     {
         private readonly IList<TKey> _keys;
         private readonly Func<TKey, TResult> _getFunction;
-        private readonly ParallelOptions _options;
 
-        public MultiGetObservable(IList<TKey> keys, Func<TKey, TResult> getFunction, ParallelOptions options)
+        public MultiGetObservable(IList<TKey> keys, Func<TKey, TResult> getFunction)
         {
             if (getFunction == null)
             {
                 throw new ArgumentNullException("getFunction");
             }
-            if (options == null)
-            {
-                throw new ArgumentNullException("options");
-            }
 
             _keys = keys;
             _getFunction = getFunction;
-            _options = options;
         }
 
         public IDisposable Subscribe(IObserver<TResult> observer)
@@ -40,48 +33,50 @@ namespace Couchbase.Reactive
                 return Disposable.Empty;
             }
 
-            var partitioner = Partitioner.Create(_keys, true);
+            var cancellationTokenSource = new CancellationTokenSource();
 
-            var partitions = partitioner.GetPartitions(_options.MaxDegreeOfParallelism);
-
-            var isDisposed = false;
-
-            var tasks = partitions.Select(keyEnumerator =>
+            Task.Factory.StartNew(() =>
             {
-                return Task.Factory.StartNew(() =>
+                Parallel.ForEach(_keys, (key, loopState) =>
                 {
                     try
                     {
-                        while (keyEnumerator.MoveNext())
+                        if (!cancellationTokenSource.IsCancellationRequested)
                         {
-                            if (isDisposed)
-                            {
-                                // Observable was disposed, so stop sending events
-                                break;
-                            }
-
-                            _options.CancellationToken.ThrowIfCancellationRequested();
-
-                            var key = keyEnumerator.Current;
                             var result = _getFunction.Invoke(key);
 
-                            observer.OnNext(result);
+                            if (!cancellationTokenSource.IsCancellationRequested)
+                            {
+                                observer.OnNext(result);
+                            }
+                            else
+                            {
+                                loopState.Break();
+                            }
+                        }
+                        else
+                        {
+                            loopState.Break();
                         }
                     }
                     catch (Exception ex)
                     {
+                        // First exception should stop processing
+                        cancellationTokenSource.Cancel();
+                        loopState.Break();
+
                         observer.OnError(ex);
                     }
-                    finally
-                    {
-                        keyEnumerator.Dispose();
-                    }
-                }, _options.CancellationToken, TaskCreationOptions.None, _options.TaskScheduler);
-            });
+                });
 
-            Task.WhenAll(tasks).ContinueWith(t => observer.OnCompleted());
+                if (!cancellationTokenSource.IsCancellationRequested)
+                {
+                    observer.OnCompleted();
+                }
+            }, cancellationTokenSource.Token);
 
-            return Disposable.Create(() => isDisposed = true);
+            // When result is disposed, cancel processing
+            return Disposable.Create(() => cancellationTokenSource.Cancel());
         }
     }
 }
