@@ -26,29 +26,10 @@ namespace Couchbase.Reactive
                 throw new ArgumentNullException("bucket");
             }
 
-            return bucket.GetObservable<T>(keys, new ParallelOptions()
-            {
-                CancellationToken = CancellationToken.None,
-                MaxDegreeOfParallelism = bucket.Configuration.PoolConfiguration.MaxSize,
-                TaskScheduler = TaskScheduler.Current
-            });
-        }
-
-        public static IObservable<KeyValuePair<string, IOperationResult<T>>> GetObservable<T>(this IBucket bucket, IList<string> keys, ParallelOptions options)
-        {
-            if (bucket == null)
-            {
-                throw new ArgumentNullException("bucket");
-            }
-            if (options == null)
-            {
-                throw new ArgumentNullException("options");
-            }
-
             Func<string, KeyValuePair<string, IOperationResult<T>>> getFunction =
                 key => new KeyValuePair<string, IOperationResult<T>>(key, bucket.Get<T>(key));
 
-            return new MultiGetObservable<string, KeyValuePair<string, IOperationResult<T>>>(keys, getFunction, options);
+            return new MultiGetObservable<string, KeyValuePair<string, IOperationResult<T>>>(keys, getFunction);
         }
 
         public static IObservable<IOperationResult<T>> GetAndTouchObservable<T>(this IBucket bucket, string key, TimeSpan expiration)
@@ -73,29 +54,10 @@ namespace Couchbase.Reactive
                 throw new ArgumentNullException("bucket");
             }
 
-            return bucket.GetDocumentObservable<T>(ids, new ParallelOptions()
-            {
-                CancellationToken = CancellationToken.None,
-                MaxDegreeOfParallelism = bucket.Configuration.PoolConfiguration.MaxSize,
-                TaskScheduler = TaskScheduler.Current
-            });
-        }
-
-        public static IObservable<KeyValuePair<string, IDocumentResult<T>>> GetDocumentObservable<T>(this IBucket bucket, IList<string> ids, ParallelOptions options)
-        {
-            if (bucket == null)
-            {
-                throw new ArgumentNullException("bucket");
-            }
-            if (options == null)
-            {
-                throw new ArgumentNullException("options");
-            }
-
             Func<string, KeyValuePair<string, IDocumentResult<T>>> getFunction =
                 key => new KeyValuePair<string, IDocumentResult<T>>(key, bucket.GetDocument<T>(key));
 
-            return new MultiGetObservable<string, KeyValuePair<string, IDocumentResult<T>>>(ids, getFunction, options);
+            return new MultiGetObservable<string, KeyValuePair<string, IDocumentResult<T>>>(ids, getFunction);
         }
 
         public static IObservable<ViewRow<T>> QueryObservable<T>(this IBucket bucket, IViewQueryable query)
